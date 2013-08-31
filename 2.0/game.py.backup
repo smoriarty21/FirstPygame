@@ -1,0 +1,260 @@
+import pygame
+import sys
+import os
+from pygame.locals import *
+from sys import exit
+
+class person:
+    visible = False
+    x = None
+    y = None
+    image = None
+    status = None
+    direction = None
+    xSpeed = 0
+    ySpeed = 0
+    rectangle = None
+    collide = None
+    itemHit = None
+    height = None
+
+def getBounds(rect):
+    left = rect.x
+    top = rect.y
+    right = rect.image.get_width() 
+    bottom = rect.image.get_height()
+    rect.rectangle = (left,top,right,bottom)
+
+def collisionCheck(rect1, rect2):
+    hit = False
+    print rect2
+    if (rect1.rectangle[1] + rect1.image.get_height()) > rect2.rectangle[1]:
+        rect1.collide = "bottom"
+        rect1.itemHit = rect2
+        #print "bottom"
+        hit = True
+    if (rect1.rectangle[0] + rect1.image.get_width())  < rect2.rectangle[0] and (rect1.rectangle[0] + (rect1.image.get_width() + 5))  > rect2.rectangle[0] and rect1.y > (height - rect2.image.get_height() - rect1.image.get_height()):
+        #print "right"
+        rect1.itemHit = rect2
+        hit = True
+        rect1.collide = "right"
+    if (rect2.rectangle[0] + rect2.image.get_width() > rect1.rectangle[0]) and (rect2.rectangle[0] + rect2.image.get_width() < rect1.x + 5) and rect1.y > (height - rect2.image.get_height() - rect1.image.get_height()):
+        #print "left"
+        rect1.itemHit = rect2
+        rect1.collide = "left"
+        hit = True
+     
+    if hit == False:
+        rect1.collide = None
+        itemHit = None
+    #print mainChar.itemHit
+    
+
+#def placeOnTop(a, b):
+    #print rect1.rectangle[1], rect2.rectangle[1], rect1.height
+    #a.y = b.rectangle[1] - a.image.get_height()
+
+def placeOnTop(a):
+    #print rect1.rectangle[1], rect2.rectangle[1], rect1.height
+    a.xSpeed = 0
+    a.ySpeed = 0
+    
+pygame.init()
+clock = pygame.time.Clock()
+
+#Set Screen Data
+height = 700
+width = 1200
+
+#Start Screen
+screen = pygame.display.set_mode((width,height))
+pygame.display.set_caption("Game")
+
+#Create Main Char
+mainChar = person()
+mainChar.visible = True
+mainChar.image = pygame.image.load("right.png").convert()
+mainChar.rectangle = (0,0,0,0)
+mainChar.x = 10
+mainChar.y = (height - mainChar.image.get_height())
+mainChar.xSpeed = 0
+mainChar.ySpeed = 0
+mainChar.status = "stopped"
+mainChar.direction = "right"
+
+#Floor
+floor = person()
+floor.image = pygame.image.load("floor.jpg").convert()
+floor.x = 0
+floor.y = height - 3
+floor.height = floor.image.get_height()
+
+#EnemyImage
+enemy = person()
+enemyImages = ['e0.jpg','e1.jpg','e2.jpg','e3.jpg','e4.jpg','e5.jpg','e6.jpg','e7.jpg','e7.jpg','e8.jpg','e9.jpg']
+enemy.image = pygame.image.load("e0.jpg").convert()
+enemy.x = ((width - (enemy.image.get_width())) - 600)
+enemy.image.set_colorkey((255,255,255))
+enemy.y =height - (enemy.image.get_height())
+enemy.rectangle = (0,0,0,0)
+
+
+#Sword Image
+swordImages = ['sword1.png','sword2.png','sword3.png']
+
+#Running and jumping
+fall = None
+jump = 0
+direction = "right"
+
+#First Draw 
+screen.blit(mainChar.image,(mainChar.x,mainChar.y))
+mainChar.image.set_colorkey((255,255,255))
+screen.blit(floor.image,(floor.x,floor.y))
+
+#Main Game Loop
+while True:
+
+    for event in pygame.event.get():
+        if event.type == QUIT:
+            pygame.quit()
+
+        #Events for pushing key down
+        if event.type == KEYDOWN:
+            if pygame.key.get_pressed()[K_RIGHT]:
+                mainChar.status = "runRight"
+                mainChar.image = pygame.image.load("right.png").convert()
+                mainChar.image.set_colorkey((255,255,255))
+                mainChar.direction = "right"
+                mainChar.xSpeed = 3
+                
+            if pygame.key.get_pressed()[K_LEFT]:
+                mainChar.status = "runLeft"
+                mainChar.image = pygame.image.load("left.png").convert()
+                mainChar.image.set_colorkey((255,255,255))
+                mainChar.direction = "left"
+                mainChar.xSpeed = 3
+                
+            if pygame.key.get_pressed()[K_UP]:
+                mainChar.status = "jump"
+
+        #Event for key releases
+        if event.type == KEYUP and mainChar.status != "jump" and mainChar.status != "fall":
+            mainChar.status = "stopped"
+
+    #Stopped status
+    if mainChar.status == "stopped":
+        mainChar.xSpeed = 0
+        mainChar.Yspeed = 0
+        
+    #Running while key is held down
+    if mainChar.status == "runRight":
+        mainChar.x += mainChar.xSpeed
+        if mainChar.y > height:
+            mainChar.y = height
+        if mainChar.y < 0:
+            mainChar.y = mainchar.image.get_height()
+        if mainChar.x < 0:
+            mainChar.x = 0
+        if mainChar.x > width - 75:
+            mainChar.x = width - 75
+        if mainChar.collide == "right":
+            mainChar.x -= 4 
+            
+    if mainChar.status == "runLeft":
+        mainChar.x -= mainChar.xSpeed
+        if mainChar.y > height:
+            mainChar.y = height
+        if mainChar.y < 0:
+            mainChar.y = mainchar.image.get_height()
+        if mainChar.x < 0:
+            mainChar.x = 0
+        if mainChar.x > width - 75:
+            mainChar.x = width - 75
+        if mainChar.collide == "left":
+            mainChar.x += 4
+   
+    #Jump
+    if mainChar.status == "jump" and mainChar.direction == "right":
+        mainChar.y -= 8
+        mainChar.x += 2
+        jump += 1
+        if mainChar.y > height:
+            mainChar.y = height
+        if mainChar.y < 0:
+            mainChar.y = mainChar.image.get_height()
+        if mainChar.x < 0:
+            mainChar.x = 0
+        if mainChar.x > width - 75:
+            mainChar.x = width - 75
+
+        if jump == 20:
+            fall = jump
+            mainChar.status = "fall"
+            
+    if mainChar.status == "jump" and mainChar.direction == "left":
+        mainChar.y -= 8
+        mainChar.x -= 2
+        jump += 1
+        if mainChar.y > height:
+            mainChar.y = height
+        if mainChar.y < 0:
+            mainChar.y = mainChar.image.get_height()
+        if mainChar.x < 0:
+            mainChar.x = 0
+        if mainChar.x > width - 75:
+            mainChar.x = width - 75
+
+        if jump == 20:
+            mainChar.status = "fall"
+            
+
+    if mainChar.status == "fall":
+        if mainChar.direction == "right":
+            jump = 0
+            mainChar.y +=10
+            mainChar.x += 5
+        elif mainChar.direction == "left":
+            jump = 0
+            mainChar.y +=10
+            mainChar.x -=5
+            
+        if mainChar.collide == "bottom" and mainChar.direction == "right":
+            #placeOnTop(mainChar,floor)
+            placeOnTop(mainChar)
+            mainChar.status = "runRight"
+        elif mainChar.collide == "bottom" and mainChar.direction == "left":
+            #placeOnTop(mainChar,floor)
+            placeOnTop(mainChar)
+            mainChar.status = "runLeft"
+
+    if mainChar.status != "jump" and mainChar.collide == None:
+        mainChar.status = "fall"
+
+    #Check collision
+    getBounds(mainChar)
+    getBounds(floor)
+    getBounds(enemy)
+    collisionCheck(mainChar,floor)
+    collisionCheck(mainChar,enemy)
+    
+    #Refresh images on screen
+    screen.fill((0,0,0))
+    pygame.draw.rect(screen, (255, 255, 255), mainChar.rectangle)
+    pygame.draw.rect(screen, (150, 150, 150), enemy.rectangle)
+    
+    pygame.draw.rect(screen, (150, 150, 150), (0,0,40,40))
+    
+    screen.blit(floor.image,(floor.x,floor.y))
+    screen.blit(enemy.image,(enemy.x,enemy.y))
+    screen.blit(mainChar.image,(mainChar.x,mainChar.y))
+    pygame.display.flip()
+    clock.tick(55)
+        
+    
+
+
+    
+    
+
+
